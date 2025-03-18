@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Submit Petition | APH</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Times New Roman', serif;
+      background: linear-gradient(to right, #007acc, #005fa3);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h2 {
+      color: white;
+      margin-top: 20px;
+      font-size: 32px;
+    }
+
+    form {
+      background: #fff;
+      padding: 40px;
+      margin: 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      width: 100%;
+      max-width: 500px;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: 'Times New Roman', serif;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    button {
+      background-color: #007acc;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .required::after {
+      content: " *";
+      color: red;
+    }
+
+    .radio-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .radio-option {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border: 1px solid #007acc;
+      border-radius: 6px;
+      color: #007acc;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-right: 10px;
+    }
+
+    .radio-option:last-child {
+      margin-right: 0;
+    }
+
+    .radio-option.selected {
+      background-color: #007acc;
+      color: white;
+    }
+
+    .hidden-radio {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Submit Your Petition</h2>
+  <form id="petition-form">
+    <label class="required">Your Name</label>
+    <input type="text" name="name" required>
+
+    <label class="required">Phone</label>
+    <input type="text" name="phone" required>
+
+    <label class="required">Address</label>
+    <input type="text" name="address" required>
+
+    <label class="required">Petition Type</label>
+    <div class="radio-group">
+      <input type="radio" name="petition_type" id="individual" value="Individual" class="hidden-radio" required>
+      <label for="individual" class="radio-option" onclick="selectType(this)">Individual</label>
+
+      <input type="radio" name="petition_type" id="public" value="Public" class="hidden-radio" required>
+      <label for="public" class="radio-option" onclick="selectType(this)">Public</label>
+    </div>
+
+    <label class="required">Subject</label>
+    <input type="text" name="petition_subject" required>
+
+    <label class="required">Description</label>
+    <textarea name="petition_description" required></textarea>
+
+    
+
+    <button type="submit">Submit Petition</button>
+  </form>
+
+  <script>
+    const apiBase = "http://127.0.0.1:8000";
+
+    function selectType(element) {
+      document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+      document.getElementById(element.getAttribute("for")).checked = true;
+    }
+
+    document.getElementById("petition-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+
+      const combinedText = form.petition_subject.value + " " + form.petition_description.value;
+      const classifyForm = new FormData();
+      classifyForm.append("petition_text", combinedText);
+
+      const classifyRes = await fetch(`${apiBase}/classify`, {
+        method: "POST",
+        body: classifyForm
+      });
+
+      const classifyData = await classifyRes.json();
+      const department = classifyData.category;
+      formData.append("category", department);  
+
+      const submitRes = await fetch(`${apiBase}/submit_to_department`, {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await submitRes.json();
+      if (submitRes.ok) {
+        alert("Petition submitted to " + result.department);
+        form.reset();
+        document.querySelectorAll(".radio-option").forEach(el => el.classList.remove("selected"));
+      } else {
+        alert("Error: " + result.error);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal Access | APH</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Times New Roman', serif;
+      background: linear-gradient(to right, #007acc, #005fa3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .auth-wrapper {
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 450px;
+    }
+    h2 {
+      text-align: center;
+      color: #007acc;
+      margin-bottom: 12px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-family: 'Times New Roman', serif;
+    }
+    input:focus {
+      outline: none;
+      border-color: #007acc;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #007acc;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 12px;
+      font-family: 'Times New Roman', serif;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    .switch-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+    .switch-link a {
+      color: #007acc;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .form-card {
+      display: none;
+    }
+    .form-card.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-wrapper">
+    <h2 id="form-header">User Login Panel</h2>
+    <!-- Sign In -->
+    <form id="form-login" class="form-card active">
+      <input type="text" name="user_id" placeholder="Your Username" required />
+      <input type="password" name="passcode" placeholder="Your Password" required />
+      <button type="submit">Log In</button>
+    </form>
+    <!-- Register -->
+    <form id="form-signup" class="form-card">
+      <input type="text" name="full_name" placeholder="Full Name" required />
+      <input type="text" name="new_user" placeholder="Create Username" required />
+      <input type="password" name="new_pass" placeholder="Create Password" required />
+      <button type="submit">Register</button>
+    </form>
+    <div class="switch-link">
+      <a onclick="toggleForms('form-login', 'Login Panel')">Login</a> |
+      <a onclick="toggleForms('form-signup', 'User Signup')">Sign Up</a>
+    </div>
+  </div>
+  <script>
+    const apiURL = "http://127.0.0.1:8000";
+    function toggleForms(formId, title) {
+      document.querySelectorAll('.form-card').forEach(f => f.classList.remove('active'));
+      document.getElementById(formId).classList.add('active');
+      document.getElementById("form-header").textContent = title;
+    }
+    document.getElementById("form-signup").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = new FormData(e.target);
+      const res = await fetch(`${apiURL}/register`, {
+        method: "POST",
+        body: data
+      });
+      const output = await res.json();
+      if (res.ok && output.message) {
+        alert(output.message);
+        toggleForms('form-login', 'Login Panel');
+      } else {
+        alert(output.error || "Registration failed");
+      }
+    });
+    document.getElementById("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = new FormData(e.target);
+      const res = await fetch(`${apiURL}/login`, {
+        method: "POST",
+        body: data
+      });
+      const output = await res.json();
+      if (res.ok && output.role === "user") {
+        localStorage.setItem("user", data.get("user_id"));
+        alert(output.message);
+        window.location.href = output.dashboard;
+      } else if (res.ok && output.role === "admin") {
+        localStorage.setItem("adminDept", output.department);
+        alert(output.message);
+        window.location.href = output.dashboard;
+      } else {
+        alert(output.error || "Login failed");
+      }
+    });
+  </script>
+</body>
+</html>

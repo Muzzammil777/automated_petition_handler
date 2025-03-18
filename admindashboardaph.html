@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel | APH</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Times New Roman', serif;
+      background: linear-gradient(to right, #007acc, #005fa3);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h2 {
+      color: white;
+      margin-top: 40px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    h3 {
+      color: #f0f0f0;
+      margin: 10px 0 30px;
+      font-weight: normal;
+    }
+
+    .list-area {
+      background: #fff;
+      padding: 30px;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .petition-card {
+      background-color: #f2f2f2;
+      margin-bottom: 20px;
+      padding: 20px;
+      border-left: 6px solid #007acc;
+      border-radius: 8px;
+      box-shadow: 0 3px 7px rgba(0, 0, 0, 0.05);
+    }
+
+    .petition-card b {
+      color: #007acc;
+    }
+
+    a {
+      color: #005fa3;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h2>Admin Panel - Petition Records</h2>
+  <h3 id="dept-display"></h3>
+
+  <div class="list-area" id="petition-list">
+    <!-- Dynamic content will be injected here -->
+  </div>
+
+  <script>
+    const serverURL = "http://127.0.0.1:8000";
+    const currentDept = localStorage.getItem("adminDept");
+
+    async function loadPetitionData() {
+      if (!currentDept || currentDept === "undefined") {
+        alert("Department info not found. Redirecting to login.");
+        window.location.href = "loginaph.html";
+        return;
+      }
+
+      document.getElementById("dept-display").textContent = `Logged in: ${currentDept.toUpperCase()} ADMIN`;
+
+      try {
+        const res = await fetch(`${serverURL}/admin/petitions?department=${encodeURIComponent(currentDept)}`);
+        const data = await res.json();
+
+        const displayArea = document.getElementById("petition-list");
+        displayArea.innerHTML = "";
+
+        if (!data || data.length === 0) {
+          displayArea.innerHTML = "<p>No records found for this department.</p>";
+          return;
+        }
+
+        data.forEach(entry => {
+          const card = document.createElement("div");
+          card.className = "petition-card";
+          card.innerHTML = `
+            <b>Subject:</b> ${entry.petition_subject}<br>
+            <b>Details:</b> ${entry.petition_description}<br>
+            <b>Citizen:</b> ${entry.name}<br>
+            <b>Phone:</b> ${entry.phone}<br>
+            <b>Location:</b> ${entry.address}<br>
+            <b>Status:</b> ${entry.status}<br>
+            ${entry.petition_file ? `<a href="uploads/${entry.petition_file}" target="_blank">📎 View Attachment</a>` : ""}
+          `;
+          displayArea.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Data fetch error:", err);
+        alert("!!Unable to retrieve records. Check server or Database.!!");
+      }
+    }
+
+    window.onload = loadPetitionData;
+  </script>
+</body>
+</html>
