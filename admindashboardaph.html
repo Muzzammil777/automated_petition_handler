@@ -5,6 +5,7 @@
   <title>Admin Panel | APH</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       font-family: 'Times New Roman', serif;
       background: linear-gradient(to right, #007acc, #005fa3);
@@ -15,16 +16,19 @@
       align-items: center;
       min-height: 100vh;
     }
+
     h2 {
       color: white;
       margin-top: 40px;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
     }
+
     h3 {
       color: #f0f0f0;
       margin: 10px 0 30px;
       font-weight: normal;
     }
+
     .list-area {
       background: #fff;
       padding: 30px;
@@ -33,11 +37,7 @@
       border-radius: 10px;
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     }
-    .list-area p {
-      color: #888;
-      font-style: italic;
-      text-align: center;
-    }
+
     .petition-card {
       background-color: #f2f2f2;
       margin-bottom: 20px;
@@ -46,26 +46,18 @@
       border-radius: 8px;
       box-shadow: 0 3px 7px rgba(0, 0, 0, 0.05);
     }
+
     .petition-card b {
       color: #007acc;
     }
+
     a {
       color: #005fa3;
       text-decoration: none;
     }
+
     a:hover {
       text-decoration: underline;
-    }
-    #loading {
-      display: none;
-      text-align: center;
-      color: white;
-    }
-    .error-message {
-      color: red;
-      font-weight: bold;
-      text-align: center;
-      margin-top: 20px;
     }
   </style>
 </head>
@@ -73,34 +65,26 @@
   <h2>Admin Panel - Petition Records</h2>
   <h3 id="dept-display"></h3>
 
-  <div id="loading">Loading records...</div>
-  <div class="list-area" id="petition-list" role="region" aria-label="Petition List">
+  <div class="list-area" id="petition-list">
     <!-- Dynamic content will be injected here -->
   </div>
 
   <script>
-    const serverURL = "https://aphbackend-production.up.railway.app/";
+    const serverURL = "https://aphbackend-production.up.railway.app";
     const currentDept = localStorage.getItem("adminDept");
 
     async function loadPetitionData() {
-      if (!currentDept || typeof currentDept !== "string") {
-        alert("Invalid department data. Redirecting to login.");
+      if (!currentDept || currentDept === "undefined") {
+        alert("Department info not found. Redirecting to login.");
         window.location.href = "loginaph.html";
         return;
       }
 
       document.getElementById("dept-display").textContent = `Logged in: ${currentDept.toUpperCase()} ADMIN`;
-      document.getElementById("loading").style.display = "block";
 
       try {
         const res = await fetch(`${serverURL}/admin/petitions?department=${encodeURIComponent(currentDept)}`);
-        
-        if (!res.ok) {
-          throw new Error(`HTTP Error: ${res.status}`);
-        }
-
         const data = await res.json();
-        document.getElementById("loading").style.display = "none";
 
         const displayArea = document.getElementById("petition-list");
         displayArea.innerHTML = "";
@@ -114,27 +98,20 @@
           const card = document.createElement("div");
           card.className = "petition-card";
           card.innerHTML = `
-            <b>Subject:</b> ${sanitize(entry.petition_subject)}<br>
-            <b>Details:</b> ${sanitize(entry.petition_description)}<br>
-            <b>Citizen:</b> ${sanitize(entry.name)}<br>
-            <b>Phone:</b> ${sanitize(entry.phone)}<br>
-            <b>Location:</b> ${sanitize(entry.address)}<br>
-            <b>Status:</b> ${sanitize(entry.status)}<br>
-            ${entry.petition_file ? `<a href="${serverURL}/uploads/${encodeURIComponent(entry.petition_file)}" target="_blank">📎 View Attachment</a>` : ""}
+            <b>Subject:</b> ${entry.petition_subject}<br>
+            <b>Details:</b> ${entry.petition_description}<br>
+            <b>Citizen:</b> ${entry.name}<br>
+            <b>Phone:</b> ${entry.phone}<br>
+            <b>Location:</b> ${entry.address}<br>
+            <b>Status:</b> ${entry.status}<br>
+            ${entry.petition_file ? `<a href="uploads/${entry.petition_file}" target="_blank">📎 View Attachment</a>` : ""}
           `;
           displayArea.appendChild(card);
         });
       } catch (err) {
-        document.getElementById("loading").style.display = "none";
         console.error("Data fetch error:", err);
-        alert("Unable to retrieve records. Please check your connection or contact support.");
+        alert("!!Unable to retrieve records. Check server or Database.!!");
       }
-    }
-
-    function sanitize(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
     }
 
     window.onload = loadPetitionData;
