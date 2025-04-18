@@ -5,6 +5,7 @@
   <title>Submit Petition | APH</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       font-family: 'Times New Roman', serif;
       background: linear-gradient(to right, #007acc, #005fa3);
@@ -16,11 +17,13 @@
       justify-content: center;
       min-height: 100vh;
     }
+
     h2 {
       color: white;
       margin-top: 20px;
       font-size: 32px;
     }
+
     form {
       background: #fff;
       padding: 40px;
@@ -30,6 +33,7 @@
       width: 100%;
       max-width: 500px;
     }
+
     input, textarea, button {
       width: 100%;
       padding: 12px;
@@ -39,10 +43,12 @@
       border-radius: 6px;
       font-family: 'Times New Roman', serif;
     }
+
     textarea {
       resize: vertical;
       min-height: 120px;
     }
+
     button {
       background-color: #007acc;
       color: #fff;
@@ -50,23 +56,28 @@
       cursor: pointer;
       font-weight: bold;
     }
+
     button:hover {
       background-color: #005fa3;
     }
+
     label {
       font-weight: bold;
       display: block;
       margin-top: 10px;
     }
+
     .required::after {
       content: " *";
       color: red;
     }
+
     .radio-group {
       display: flex;
       justify-content: space-between;
       margin-top: 10px;
     }
+
     .radio-option {
       flex: 1;
       text-align: center;
@@ -79,38 +90,32 @@
       transition: 0.3s;
       margin-right: 10px;
     }
+
     .radio-option:last-child {
       margin-right: 0;
     }
+
     .radio-option.selected {
       background-color: #007acc;
       color: white;
     }
+
     .hidden-radio {
       display: none;
-    }
-    input:focus, textarea:focus {
-      outline: 2px solid #007acc;
-    }
-    #loading {
-      display: none;
-      text-align: center;
-      color: white;
     }
   </style>
 </head>
 <body>
   <h2>Submit Your Petition</h2>
-  <div id="loading">Submitting Petition...</div>
   <form id="petition-form">
     <label class="required">Your Name</label>
-    <input type="text" name="name" aria-label="Your Name" required>
+    <input type="text" name="name" required>
 
     <label class="required">Phone</label>
-    <input type="text" name="phone" aria-label="Phone" required>
+    <input type="text" name="phone" required>
 
     <label class="required">Address</label>
-    <input type="text" name="address" aria-label="Address" required>
+    <input type="text" name="address" required>
 
     <label class="required">Petition Type</label>
     <div class="radio-group">
@@ -122,16 +127,16 @@
     </div>
 
     <label class="required">Subject</label>
-    <input type="text" name="petition_subject" aria-label="Subject" maxlength="100" required>
+    <input type="text" name="petition_subject" required>
 
     <label class="required">Description</label>
-    <textarea name="petition_description" aria-label="Description" maxlength="500" required></textarea>
+    <textarea name="petition_description" required></textarea>
 
     <button type="submit">Submit Petition</button>
   </form>
 
   <script>
-    const apiBase = "https://aphbackend-production.up.railway.app/";
+    const apiBase = "https://aphbackend-production.up.railway.app";
 
     function selectType(element) {
       document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
@@ -139,53 +144,36 @@
       document.getElementById(element.getAttribute("for")).checked = true;
     }
 
-    document.querySelector('input[name="phone"]').addEventListener("input", (e) => {
-      const phone = e.target.value;
-      if (!/^\d{10}$/.test(phone)) {
-        e.target.setCustomValidity("Enter a valid 10-digit phone number");
-      } else {
-        e.target.setCustomValidity("");
-      }
-    });
-
     document.getElementById("petition-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const form = e.target;
       const formData = new FormData(form);
-      const submitButton = form.querySelector("button");
-      document.getElementById("loading").style.display = "block";
-      submitButton.disabled = true;
 
-      try {
-        const classifyForm = new FormData();
-        classifyForm.append("petition_text", form.petition_subject.value + " " + form.petition_description.value);
+      const combinedText = form.petition_subject.value + " " + form.petition_description.value;
+      const classifyForm = new FormData();
+      classifyForm.append("petition_text", combinedText);
 
-        const classifyRes = await fetch(`${apiBase}/classify`, {
-          method: "POST",
-          body: classifyForm
-        });
+      const classifyRes = await fetch(`${apiBase}/classify`, {
+        method: "POST",
+        body: classifyForm
+      });
 
-        if (!classifyRes.ok) throw new Error("Classification API error");
-        const classifyData = await classifyRes.json();
-        const department = classifyData.category;
-        formData.append("category", department);
+      const classifyData = await classifyRes.json();
+      const department = classifyData.category;
+      formData.append("category", department);  
 
-        const submitRes = await fetch(`${apiBase}/submit_to_department`, {
-          method: "POST",
-          body: formData
-        });
+      const submitRes = await fetch(`${apiBase}/submit_to_department`, {
+        method: "POST",
+        body: formData
+      });
 
-        if (!submitRes.ok) throw new Error("Submission API error");
-        const result = await submitRes.json();
-
+      const result = await submitRes.json();
+      if (submitRes.ok) {
         alert("Petition submitted to " + result.department);
         form.reset();
         document.querySelectorAll(".radio-option").forEach(el => el.classList.remove("selected"));
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-      } finally {
-        document.getElementById("loading").style.display = "none";
-        submitButton.disabled = false;
+      } else {
+        alert("Error: " + result.error);
       }
     });
   </script>
